@@ -5,4 +5,5 @@ module org.example.hellofx {
 
     opens org.example.hellofx to javafx.fxml;
     exports org.example.hellofx;
+    
 }
