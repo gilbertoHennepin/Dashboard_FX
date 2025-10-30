@@ -57,16 +57,8 @@ public class HelloController {
         stage.setScene(scene);
         stage.show();
     }
-    // RULES ENGINE ADMINISTRATION
-    public void switchScene6(ActionEvent event) throws IOException {
-        Parent root = FXMLLoader.load(getClass().getResource("Scene6.fxml")); // Ensure Scene2.fxml exists
-        stage = (Stage)((Node)event.getSource()).getScene().getWindow();
-        scene = new Scene(root);
-        stage.setScene(scene);
-        stage.show();
-    }
     public void SimulationRunner(ActionEvent event) throws IOException {
-        Parent root = FXMLLoader.load(getClass().getResource("SimulationRunnner.fxml")); // Ensure Scene2.fxml exists
+        Parent root = FXMLLoader.load(getClass().getResource("SimulationRunner.fxml")); // Ensure Scene2.fxml exists
         stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         scene = new Scene(root);
         stage.setScene(scene);
