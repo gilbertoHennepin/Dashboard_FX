@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="416.0" prefWidth="600.0" style="-fx-background-color: #d3d3d3;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.hellofx.HelloController">
+    <children>
+        <AnchorPane layoutY="27.0" prefHeight="37.0" prefWidth="600.0" style="-fx-background-color: #4aa6f2;">
+            <children>
+                <Button layoutX="418.0" layoutY="4.0" mnemonicParsing="false" onAction="#switchScene4" prefHeight="28.0" prefWidth="60.0" style="-fx-background-color: #aedaff;" text="Layouts">
+                    <font>
+                        <Font name="System Bold" size="12.0" />
+                    </font></Button>
+                <Button layoutX="482.0" layoutY="4.0" mnemonicParsing="false" onAction="#switchScene" prefHeight="28.0" prefWidth="113.0" style="-fx-background-color: #aedaff;" text="Main Dashboard">
+                    <font>
+                        <Font name="System Bold" size="12.0" />
+                    </font></Button>
+            </children>
+        </AnchorPane>
+        <Label layoutX="14.0" layoutY="6.0" prefHeight="17.0" prefWidth="120.0" text="Dashboard | Rulesets">
+            <font>
+                <Font name="System Bold" size="12.0" />
+            </font></Label>
+        <Button layoutX="518.0" layoutY="71.0" mnemonicParsing="false" onAction="#switchScene2" prefHeight="37.0" prefWidth="68.0" style="-fx-background-color: #2682cd;" text="Create" textFill="WHITE">
+            <font>
+                <Font name="System Bold" size="12.0" />
+            </font>
+        </Button>
+        <Button layoutX="14.0" layoutY="71.0" mnemonicParsing="false" onAction="#switchScene3" prefHeight="34.0" prefWidth="91.0" style="-fx-background-color: #5d6bff;" text="Reports" textFill="#f8f8f8">
+            <font>
+                <Font name="System Bold" size="12.0" />
+            </font>
+        </Button>
+        <AnchorPane layoutX="8.0" layoutY="118.0" prefHeight="44.0" prefWidth="584.0" style="-fx-background-color: #f8f8f8;">
+            <children>
+                <Label layoutX="14.0" layoutY="14.0" prefHeight="17.0" prefWidth="120.0" text="Ruleset Name">
+                    <font>
+                        <Font name="System Bold" size="12.0" />
+                    </font>
+                </Label>
+                <Button layoutX="376.0" layoutY="8.0" mnemonicParsing="false" prefHeight="28.0" prefWidth="60.0" style="-fx-background-color: #aedaff;" />
+                <ImageView fitHeight="25.0" fitWidth="33.0" layoutX="390.0" layoutY="10.0">
+                    <Image url="@/trashcan.png" />
+                </ImageView>
+                <Button layoutX="443.0" layoutY="8.0" mnemonicParsing="false" prefHeight="28.0" prefWidth="60.0" style="-fx-background-color: #aedaff;" />
+                <Button layoutX="510.0" layoutY="8.0" mnemonicParsing="false" prefHeight="28.0" prefWidth="60.0" style="-fx-background-color: #aedaff;" />
+                <ImageView fitHeight="25.0" fitWidth="33.0" layoutX="457.0" layoutY="10.0">
+                    <Image url="@/view.png" />
+                </ImageView>
+                <ImageView fitHeight="25.0" fitWidth="33.0" layoutX="524.0" layoutY="10.0">
+                    <Image url="@/play.png" />
+                </ImageView>
+            </children>
+        </AnchorPane>
+        <AnchorPane layoutX="8.0" layoutY="167.0" prefHeight="44.0" prefWidth="584.0" style="-fx-background-color: #f8f8f8;">
+            <children>
+                <Label layoutX="14.0" layoutY="14.0" prefHeight="17.0" prefWidth="120.0" text="Ruleset Name">
+                    <font>
+                        <Font name="System Bold" size="12.0" />
+                    </font>
+                </Label>
+                <Button layoutX="376.0" layoutY="8.0" mnemonicParsing="false" prefHeight="28.0" prefWidth="60.0" style="-fx-background-color: #aedaff;" />
+                <ImageView fitHeight="25.0" fitWidth="33.0" layoutX="390.0" layoutY="10.0">
+                    <Image url="@/trashcan.png" />
+                </ImageView>
+                <Button layoutX="443.0" layoutY="8.0" mnemonicParsing="false" prefHeight="28.0" prefWidth="60.0" style="-fx-background-color: #aedaff;" />
+                <Button layoutX="510.0" layoutY="8.0" mnemonicParsing="false" prefHeight="28.0" prefWidth="60.0" style="-fx-background-color: #aedaff;" />
+                <ImageView fitHeight="25.0" fitWidth="33.0" layoutX="457.0" layoutY="10.0">
+                    <Image url="@/view.png" />
+                </ImageView>
+                <ImageView fitHeight="25.0" fitWidth="33.0" layoutX="524.0" layoutY="10.0">
+                    <Image url="@/play.png" />
+                </ImageView>
+            </children>
+        </AnchorPane>
+        <AnchorPane layoutX="8.0" layoutY="216.0" prefHeight="44.0" prefWidth="584.0" style="-fx-background-color: #f8f8f8;">
+            <children>
+                <Label layoutX="14.0" layoutY="14.0" prefHeight="17.0" prefWidth="120.0" text="Ruleset Name">
+                    <font>
+                        <Font name="System Bold" size="12.0" />
+                    </font>
+                </Label>
+                <Button layoutX="376.0" layoutY="8.0" mnemonicParsing="false" prefHeight="28.0" prefWidth="60.0" style="-fx-background-color: #aedaff;" />
+                <ImageView fitHeight="25.0" fitWidth="33.0" layoutX="390.0" layoutY="10.0">
+                    <Image url="@/trashcan.png" />
+                </ImageView>
+                <Button layoutX="443.0" layoutY="8.0" mnemonicParsing="false" prefHeight="28.0" prefWidth="60.0" style="-fx-background-color: #aedaff;" />
+                <Button layoutX="510.0" layoutY="8.0" mnemonicParsing="false" prefHeight="28.0" prefWidth="60.0" style="-fx-background-color: #aedaff;" />
+                <ImageView fitHeight="25.0" fitWidth="33.0" layoutX="457.0" layoutY="10.0">
+                    <Image url="@/view.png" />
+                </ImageView>
+                <ImageView fitHeight="25.0" fitWidth="33.0" layoutX="524.0" layoutY="10.0">
+                    <Image url="@/play.png" />
+                </ImageView>
+            </children>
+        </AnchorPane>
+        <AnchorPane layoutX="8.0" layoutY="265.0" prefHeight="44.0" prefWidth="584.0" style="-fx-background-color: #f8f8f8;">
+            <children>
+                <Label layoutX="14.0" layoutY="14.0" prefHeight="17.0" prefWidth="120.0" text="Ruleset Name">
+                    <font>
+                        <Font name="System Bold" size="12.0" />
+                    </font>
+                </Label>
+                <Button layoutX="376.0" layoutY="8.0" mnemonicParsing="false" prefHeight="28.0" prefWidth="60.0" style="-fx-background-color: #aedaff;" />
+                <ImageView fitHeight="25.0" fitWidth="33.0" layoutX="390.0" layoutY="10.0">
+                    <Image url="@/trashcan.png" />
+                </ImageView>
+                <Button layoutX="443.0" layoutY="8.0" mnemonicParsing="false" prefHeight="28.0" prefWidth="60.0" style="-fx-background-color: #aedaff;" />
+                <Button layoutX="510.0" layoutY="8.0" mnemonicParsing="false" prefHeight="28.0" prefWidth="60.0" style="-fx-background-color: #aedaff;" />
+                <ImageView fitHeight="25.0" fitWidth="33.0" layoutX="457.0" layoutY="10.0">
+                    <Image url="@/view.png" />
+                </ImageView>
+                <ImageView fitHeight="25.0" fitWidth="33.0" layoutX="524.0" layoutY="10.0">
+                    <Image url="@/play.png" />
+                </ImageView>
+            </children>
+        </AnchorPane>
+        <AnchorPane layoutX="8.0" layoutY="314.0" prefHeight="44.0" prefWidth="584.0" style="-fx-background-color: #f8f8f8;">
+            <children>
+                <Label layoutX="14.0" layoutY="14.0" prefHeight="17.0" prefWidth="120.0" text="Ruleset Name">
+                    <font>
+                        <Font name="System Bold" size="12.0" />
+                    </font>
+                </Label>
+                <Button layoutX="376.0" layoutY="8.0" mnemonicParsing="false" prefHeight="28.0" prefWidth="60.0" style="-fx-background-color: #aedaff;" />
+                <ImageView fitHeight="25.0" fitWidth="33.0" layoutX="390.0" layoutY="10.0">
+                    <Image url="@/trashcan.png" />
+                </ImageView>
+                <Button layoutX="443.0" layoutY="8.0" mnemonicParsing="false" prefHeight="28.0" prefWidth="60.0" style="-fx-background-color: #aedaff;" />
+                <Button layoutX="510.0" layoutY="8.0" mnemonicParsing="false" prefHeight="28.0" prefWidth="60.0" style="-fx-background-color: #aedaff;" />
+                <ImageView fitHeight="25.0" fitWidth="33.0" layoutX="457.0" layoutY="10.0">
+                    <Image url="@/view.png" />
+                </ImageView>
+                <ImageView fitHeight="25.0" fitWidth="33.0" layoutX="524.0" layoutY="10.0">
+                    <Image url="@/play.png" />
+                </ImageView>
+            </children>
+        </AnchorPane>
+        <AnchorPane layoutX="8.0" layoutY="363.0" prefHeight="44.0" prefWidth="584.0" style="-fx-background-color: #f8f8f8;">
+            <children>
+                <Label layoutX="14.0" layoutY="14.0" prefHeight="17.0" prefWidth="120.0" text="Ruleset Name">
+                    <font>
+                        <Font name="System Bold" size="12.0" />
+                    </font>
+                </Label>
+                <Button layoutX="376.0" layoutY="8.0" mnemonicParsing="false" prefHeight="28.0" prefWidth="60.0" style="-fx-background-color: #aedaff;" />
+                <ImageView fitHeight="25.0" fitWidth="33.0" layoutX="390.0" layoutY="10.0">
+                    <Image url="@/trashcan.png" />
+                </ImageView>
+                <Button layoutX="443.0" layoutY="8.0" mnemonicParsing="false" prefHeight="28.0" prefWidth="60.0" style="-fx-background-color: #aedaff;" />
+                <Button layoutX="510.0" layoutY="8.0" mnemonicParsing="false" prefHeight="28.0" prefWidth="60.0" style="-fx-background-color: #aedaff;" />
+                <ImageView fitHeight="25.0" fitWidth="33.0" layoutX="457.0" layoutY="10.0">
+                    <Image url="@/view.png" />
+                </ImageView>
+                <ImageView fitHeight="25.0" fitWidth="33.0" layoutX="524.0" layoutY="10.0">
+                    <Image url="@/play.png" />
+                </ImageView>
+            </children>
+        </AnchorPane>
+    </children>
+</AnchorPane>
