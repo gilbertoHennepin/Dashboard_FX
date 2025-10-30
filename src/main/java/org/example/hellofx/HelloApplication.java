@@ -31,7 +31,7 @@ public class HelloApplication extends Application {
         stage.setScene(scene);
         stage.setResizable(true);
         stage.setFullScreen(false);
-        stage.setMaximized(true);
+        //stage.setMaximized(true);
         stage.setFullScreenExitHint("To ESCAPE PRESS q");
         stage.setFullScreenExitKeyCombination(KeyCombination.keyCombination("q"));
 
