@@ -95,7 +95,7 @@ public class SimulationRunnerController {
             }
         }
 
-        // Add some walls | (pink/wall area)
+        // Add some walls | (gray/wall area)
         layout[0][5] = 1;
         layout[1][5] = 1;
         layout[3][5] = 1;
@@ -111,7 +111,7 @@ public class SimulationRunnerController {
         robotRow = 0;
         robotCol = 0;
 
-        // Set exit position
+        // Set exit position || Pink Square
         exitRow = 4;
         exitCol = 6;
     }
