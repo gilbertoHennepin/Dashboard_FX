@@ -94,7 +94,7 @@ public class SimulationRunnerController {
                 layout[i][j] = 0;
             }
         }
-
+            
         // Add some walls | (gray/wall area)
         layout[0][5] = 1;
         layout[1][5] = 1;
