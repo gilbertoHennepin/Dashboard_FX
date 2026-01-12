@@ -4,8 +4,7 @@
     import com.google.genai.types.GenerateContentConfig;
     import com.google.genai.types.GenerateContentResponse;
     import com.google.genai.types.Part;
-
-    import static input.InputUtils.stringInput;
+    import java.util.Scanner;
 
     public class GeminiChatBot {
         public static void main(String[] args) {
@@ -41,8 +40,10 @@
 
             System.out.println("--- Robot Chatbot initialized  ---");
 
+            Scanner scanner = new Scanner(System.in);
             while (true) {
-                String userPrompt = stringInput("Enter a command (type exit to quit): ");
+                System.out.print("Enter a command (type exit to quit): ");
+                String userPrompt = scanner.nextLine();
                 if (userPrompt.equalsIgnoreCase("exit")){
                     System.out.println("Goodbye!");
                     break;}
