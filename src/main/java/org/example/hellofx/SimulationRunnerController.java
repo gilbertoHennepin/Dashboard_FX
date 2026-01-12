@@ -1,7 +1,11 @@
 package org.example.hellofx;
 
+import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -9,13 +13,17 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-
-import java.io.IOException;
 
 
 // CLASS DECLARATIONS & AND FIELDS
@@ -53,6 +61,13 @@ public class SimulationRunnerController {
     //GRID
     private int[][] layout = new int[10][10];  // 10x10 grid layout WHERE  (0 = open, 1 = wall)
 
+    // Chat bot service (Gemini integration)
+    // Chat bot service (Gemini integration)
+    // This service is instantiated once and used to request asynchronous
+    // control commands from the Gemini model (or a local mock when no API key).
+    // Calls are non-blocking and returned via CompletableFuture.
+    private ChatBotService chatService;
+
 
     // INITIALIZE METHOD | RUNS AUTOMATICALLY WHEN THE FXML LOADS
     @FXML
@@ -83,6 +98,11 @@ public class SimulationRunnerController {
 
         // DRAW'S ALL THE CELLS ON SCREEN
         drawGrid();
+
+        // Initialize chat service
+        // Create service instance. It will use GEMINI_API_KEY when available,
+        // otherwise it runs in a mock/offline mode so the sim remains functional.
+        chatService = new ChatBotService();
     }
 
     // INITIALIZE SAMPLE LAYOUT
@@ -225,6 +245,24 @@ public class SimulationRunnerController {
             KeyFrame frame = new KeyFrame(
                     Duration.millis(800 * (i + 1)),
                     event -> {
+                        // send telemetry + goal to chatbot asynchronously
+                        // Important: do NOT block the JavaFX thread. We send the
+                        // telemetry snapshot to `chatService.requestCommand(...)`
+                        // which returns a CompletableFuture. When the future
+                        // completes we schedule any state changes on the
+                        // JavaFX thread via Platform.runLater.
+                        try {
+                            String telemetry = buildTelemetryJson();
+                            CompletableFuture<ChatBotService.ChatCommand> fut = chatService.requestCommand(telemetry, "Find exit");
+                            fut.thenAccept(cmd -> {
+                                if (cmd != null && !"noop".equalsIgnoreCase(cmd.action)) {
+                                    Platform.runLater(() -> applyChatCommand(cmd, step));
+                                }
+                            });
+                        } catch (Exception e) {
+                            // ignore chatbot errors and continue with heuristic
+                        }
+
                         // Check if exit is in any adjacent cell
                         String exitDirection = findExitDirection();
 
@@ -401,6 +439,47 @@ public class SimulationRunnerController {
             case "EAST": robotDirection = "WEST"; break;
             case "WEST": robotDirection = "EAST"; break;
         }
+    }
+
+    // Build a small telemetry JSON snapshot for the chatbot
+    private String buildTelemetryJson() {
+        return String.format("{\"id\":\"robot1\",\"position\":{\"row\":%d,\"col\":%d,\"dir\":\"%s\"},\"exit\":{\"row\":%d,\"col\":%d}}",
+                robotRow, robotCol, robotDirection, exitRow, exitCol);
+    }
+
+    // Apply a command returned by the chatbot to the simulator
+    private void applyChatCommand(ChatBotService.ChatCommand cmd, int step) {
+        if (cmd == null) return;
+
+        switch (cmd.action.toLowerCase()) {
+            case "move":
+                // For grid simulation we treat distance >= 1 as a single moveForward
+                if (canMoveForward()) {
+                    moveForward();
+                    moveListView.getItems().add((step + 1) + ". [ChatBot] Move Forward (cmd)");
+                } else {
+                    moveListView.getItems().add((step + 1) + ". [ChatBot] Move blocked by obstacle");
+                }
+                break;
+            case "stop":
+                moveListView.getItems().add((step + 1) + ". [ChatBot] STOP command received");
+                break;
+            case "rotate":
+                // Support simple rotate commands where direction may be NORTH/SOUTH/EAST/WEST
+                if (cmd.direction != null) {
+                    robotDirection = cmd.direction.toUpperCase();
+                    moveListView.getItems().add((step + 1) + ". [ChatBot] Rotate to " + robotDirection);
+                } else {
+                    moveListView.getItems().add((step + 1) + ". [ChatBot] Rotate command missing direction");
+                }
+                break;
+            case "noop":
+            default:
+                // do nothing
+                break;
+        }
+        // update grid after applying
+        drawGrid();
     }
 
 
