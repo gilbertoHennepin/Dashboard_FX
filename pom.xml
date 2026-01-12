@@ -60,11 +60,19 @@
     </dependencies>
 
     <build>
-        <resources>
+           <!-- Ensure application resources (FXML, images) are copied to the
+               classpath so FXMLLoader and other runtime code can load them. -->
+           <resources>
             <resource>
                 <directory>src/main/java/org/example</directory>
                 <includes>
                     <include>system_instructions.txt</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>**/*</include>
                 </includes>
             </resource>
         </resources>
