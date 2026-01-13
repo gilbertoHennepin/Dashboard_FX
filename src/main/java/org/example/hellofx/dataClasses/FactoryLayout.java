@@ -45,48 +45,48 @@ public class FactoryLayout {
         StringBuilder json = new StringBuilder("{");
         json.append("\"size\":\"10x10\",");
         json.append("\"robotStart\":");
-
-        // Find robot start
-        int startX = -1, startY = -1;
-        for (int i = 0; i < 10; i++) {
-            for (int j = 0; j < 10; j++) {
-                if (gridState[i][j] == 2) {
-                    startX = i;
-                    startY = j;
+        
+        // Find robot start (row = y, col = x)
+        int startRow = -1, startCol = -1;
+        for (int row = 0; row < 10; row++) {
+            for (int col = 0; col < 10; col++) {
+                if (gridState[row][col] == 2) {
+                    startRow = row;
+                    startCol = col;
                     break;
                 }
             }
         }
-        json.append("{\"x\":").append(startX).append(",\"y\":").append(startY).append("},");
-
-        // Find exit
+        json.append("{\"x\":").append(startCol).append(",\"y\":").append(startRow).append("},");
+        
+        // Find exit (row = y, col = x)
         json.append("\"exit\":");
-        int exitX = -1, exitY = -1;
-        for (int i = 0; i < 10; i++) {
-            for (int j = 0; j < 10; j++) {
-                if (gridState[i][j] == 3) {
-                    exitX = i;
-                    exitY = j;
+        int exitRow = -1, exitCol = -1;
+        for (int row = 0; row < 10; row++) {
+            for (int col = 0; col < 10; col++) {
+                if (gridState[row][col] == 3) {
+                    exitRow = row;
+                    exitCol = col;
                     break;
                 }
             }
         }
-        json.append("{\"x\":").append(exitX).append(",\"y\":").append(exitY).append("},");
-
-        // Find obstacles
+        json.append("{\"x\":").append(exitCol).append(",\"y\":").append(exitRow).append("},");
+        
+        // Find obstacles (row = y, col = x)
         json.append("\"obstacles\":[");
         boolean first = true;
-        for (int i = 0; i < 10; i++) {
-            for (int j = 0; j < 10; j++) {
-                if (gridState[i][j] == 1) {
+        for (int row = 0; row < 10; row++) {
+            for (int col = 0; col < 10; col++) {
+                if (gridState[row][col] == 1) {
                     if (!first) json.append(",");
-                    json.append("{\"x\":").append(i).append(",\"y\":").append(j).append("}");
+                    json.append("{\"x\":").append(col).append(",\"y\":").append(row).append("}");
                     first = false;
                 }
             }
         }
         json.append("]}");
-
+        
         return json.toString();
     }
 

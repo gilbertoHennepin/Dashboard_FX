@@ -50,3 +50,6 @@ INSERT INTO simulation_runs (layout_id, ruleset_id, outcome, run_timestamp, deta
 CREATE INDEX idx_simulation_runs_timestamp ON simulation_runs(run_timestamp DESC);
 CREATE INDEX idx_layouts_name ON layouts(name);
 CREATE INDEX idx_rulesets_name ON rulesets(name);
+
+INSERT INTO layouts (name, grid_data) 
+VALUES ('Test Layout with Obstacles', '{"size": "10x10", "obstacles": [[3,3], [5,5], [7,7]]}');

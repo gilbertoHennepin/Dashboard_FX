@@ -1,7 +1,6 @@
 package org.example.hellofx;
 
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -11,30 +10,25 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
-import javafx.util.Duration;
+import org.example.hellofx.dba.SimulationDAO;
+import org.example.hellofx.dataClasses.Layout;
+import org.example.hellofx.dataClasses.Ruleset;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.util.List;
 
-
-// CLASS DECLARATIONS & AND FIELDS
 public class SimulationRunnerController {
 
     @FXML
-    private ComboBox<String> layoutComboBox;
+    private ComboBox<Layout> layoutComboBox;
 
     @FXML
-    private ComboBox<String> rulesetComboBox;
+    private ComboBox<Ruleset> rulesetComboBox;
 
     @FXML
     private Spinner<Integer> maxAttemptsSpinner;
-
-    @FXML
-    private Button runButton;
-
-    @FXML
-    private Button backButton;
 
     @FXML
     private GridPane factoryGrid;
@@ -42,383 +36,279 @@ public class SimulationRunnerController {
     @FXML
     private ListView<String> moveListView;
 
-
-    // SIM VARIABLES
-    private int robotRow = 0; // ROBOT STARTS AT POSITION (0,0)
-    private int robotCol = 0; // ROBOT STARTS AT POSITION (0,0)
-    private int exitRow = 2;  // PINK SQUARE'S POSITION
-    private int exitCol = 5;  // PINK SQUARE'S POSITION
-    private String robotDirection = "EAST"; // ROBOT FACES EAST
-
-    //GRID
-    private int[][] layout = new int[10][10];  // 10x10 grid layout WHERE  (0 = open, 1 = wall)
-
-
-    // INITIALIZE METHOD | RUNS AUTOMATICALLY WHEN THE FXML LOADS
     @FXML
-    private void initialize() {
-        System.out.println("SimulationRunner initialized!");
+    private Button runButton;
 
-        // SETUP SPINNER | ALLOWS USER TO SELECT HOW MANY MOVES THE ROBOT CAN TRY
-        SpinnerValueFactory<Integer> valueFactory =
-                new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 1000, 100);
+    private SimulationDAO simulationDAO;
+
+    @FXML
+    public void initialize() {
+        // Initialize spinner with default values
+        SpinnerValueFactory<Integer> valueFactory = 
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, 10);
         maxAttemptsSpinner.setValueFactory(valueFactory);
 
-        // ADDS OPTIONS FOR DROPDOWN MENUS
-        // "selectFirst()" AUTOMATICALLY SELECTS THE TEST & RULESET 1
-        //TODO  *****WILL LATER CONNECT THIS TO THE DATA FROM DATABASE*****
-
-        layoutComboBox.setItems(FXCollections.observableArrayList(
-                "Test Layout 1", "Test Layout 2"
-        ));
-        layoutComboBox.getSelectionModel().selectFirst();
-
-        rulesetComboBox.setItems(FXCollections.observableArrayList(
-                "Test Ruleset 1", "Test Ruleset 2"
-        ));
-        rulesetComboBox.getSelectionModel().selectFirst();
-
-        // INITIALIZE THE GRID
-        initializeSampleLayout(); // SETS UP WHICH CELLS ARE WALLS AND WHICH ARE OPEN
-
-        // DRAW'S ALL THE CELLS ON SCREEN
-        drawGrid();
-    }
-
-    // INITIALIZE SAMPLE LAYOUT
-    private void initializeSampleLayout() {
-        // Create a sample layout with some walls
-        // LOOPS THROUGH THE 100 CELLS * SETS THEM TO 0 (OPEN/WHITE)
-        for (int i = 0; i < 10; i++) {
-            for (int j = 0; j < 10; j++) {
-                layout[i][j] = 0;
+        // Listen for layout selection changes
+        layoutComboBox.setOnAction(e -> {
+            Layout selected = layoutComboBox.getValue();
+            if (selected != null) {
+                displayLayout(selected);
             }
-        }
-            
-        // Add some walls | (gray/wall area)
-        layout[0][5] = 1;
-        layout[1][5] = 1;
-        layout[3][5] = 1;
-        layout[4][5] = 1;
-        layout[0][6] = 1;
-        layout[5][6] = 1;
-        layout[4][7] = 1;
-        layout[3][7] = 1;
-        layout[2][7] = 1;
+        });
 
-
-        // Set starting position
-        robotRow = 0;
-        robotCol = 0;
-
-        // Set exit position || Pink Square
-        exitRow = 4;
-        exitCol = 6;
+        // Load data from database
+        loadDataFromDatabase();
     }
 
-    private void drawGrid() {
-        // Clear existing grid || REMOVES OLD CELLS (IF REDRAWING)
-        factoryGrid.getChildren().clear();
+    private void loadDataFromDatabase() {
+        new Thread(() -> {
+            try {
+                Connection conn = DatabaseConfig.getConnection();
+                simulationDAO = new SimulationDAO(conn);
 
-        // Set grid gap || 1 PIXEL BETWEEN CELLS
-        factoryGrid.setHgap(1);
-        factoryGrid.setVgap(1);
+                // Fetch layouts and rulesets
+                List<Layout> layouts = simulationDAO.getAllLayouts();
+                List<Ruleset> rulesets = simulationDAO.getAllRulesets();
 
-        // Create 10x10 grid of cells
-        for (int row = 0; row < 10; row++) { // LOOPS THROUGH ALL 100 POSITIONS
-            for (int col = 0; col < 10; col++) {
-                StackPane cell = createCell(row, col); // CREATES A CELL FOR EACH POSITION
-                factoryGrid.add(cell, col, row); // ADDS CELL TO GRIDPANE (COLUMN, ROW)
+                // Update UI on JavaFX Application Thread
+                Platform.runLater(() -> {
+                    // Debug: Print what we got
+                    System.out.println("Loaded " + layouts.size() + " layouts:");
+                    for (Layout layout : layouts) {
+                        System.out.println("  - " + layout.getName());
+                    }
+                    System.out.println("Loaded " + rulesets.size() + " rulesets:");
+                    for (Ruleset ruleset : rulesets) {
+                        System.out.println("  - " + ruleset.getName());
+                    }
+
+                    layoutComboBox.setItems(FXCollections.observableArrayList(layouts));
+                    rulesetComboBox.setItems(FXCollections.observableArrayList(rulesets));
+
+                    // Auto-select first items if available
+                    if (!layouts.isEmpty()) {
+                        layoutComboBox.getSelectionModel().selectFirst();
+                        displayLayout(layouts.get(0)); // Display first layout
+                    }
+                    if (!rulesets.isEmpty()) {
+                        rulesetComboBox.getSelectionModel().selectFirst();
+                    }
+                });
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                Platform.runLater(() -> {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Database Error");
+                    alert.setHeaderText("Failed to load data");
+                    alert.setContentText("Could not connect to database: " + e.getMessage());
+                    alert.showAndWait();
+                });
             }
-        }
+        }).start();
     }
 
-    //CREATE CELL (FOR EACH BOX)
-    private StackPane createCell(int row, int col) {
-        StackPane cell = new StackPane();
-        cell.setPrefSize(35, 35); // Size of each cell
-        cell.setMinSize(35, 35);
-        cell.setMaxSize(35, 35);
-
-
-        // Default style
-        // LIGHT GRAY BORDER
-        String style = "-fx-border-color: #cccccc; -fx-border-width: 1;";
-
-        // CHECK IF THE POSITION IS A WALL (= 1) IF SO MAKES IT GRAY
-        if (layout[row][col] == 1) {
-            // Wall - gray
-            style += "-fx-background-color: #808080;";
-
-            // CHECKS WHERE THE ROBOT IS, IF YES IT MAKES IT GREEN
-        } else if (row == robotRow && col == robotCol) {
-            // Robot - green
-            style += "-fx-background-color: #90EE90;";
-
-            // ADDS ARROW INSIDE CELL DEPENDING WHERE THE ROBOT IS FACING
-            Label arrow = new Label(getDirectionArrow());
-            arrow.setStyle("-fx-font-size: 16; -fx-font-weight: bold;");
-            cell.getChildren().add(arrow);
-
-            // CHECKS FOR EXIT POSITION, IF YES MAKES IT PINK/RED
-        } else if (row == exitRow && col == exitCol) {
-            // Exit - pink
-            style += "-fx-background-color: #FFB6C1;";
-
-            // IF NOT A WALL ROBOT OR EXIT MAKES IT WHITE (OPEN SPACE)
-        } else {
-            // Open space - white
-            style += "-fx-background-color: white;";
-        }
-
-        cell.setStyle(style);
-        return cell;
-    }
-
-    //GET DIRECTION ARROW & RETURNS WHERE ITS FACING
-    private String getDirectionArrow() {
-        switch (robotDirection) {
-            case "NORTH": return "▲";
-            case "SOUTH": return "▼";
-            case "EAST": return "►";
-            case "WEST": return "◄";
-            default: return "●";
-        }
-    }
-
-    // HANDLE RUN BUTTON
-    // GETS VALUES FORM THE DROPWDOWNS AND SPINNER
-    //CHECKS IF USER HAS SELECTED A LAYOUT AND SPINNER
-    // IF NOT SHOWS AN ERROR AND STOPS
     @FXML
     private void handleRun() {
-        String selectedLayout = layoutComboBox.getValue();
-        String selectedRuleset = rulesetComboBox.getValue();
-        int maxAttempts = maxAttemptsSpinner.getValue();
+        Layout selectedLayout = layoutComboBox.getValue();
+        Ruleset selectedRuleset = rulesetComboBox.getValue();
+        Integer maxAttempts = maxAttemptsSpinner.getValue();
 
-        if (selectedLayout == null || selectedRuleset == null) {
-            showAlert("Please select both a layout and ruleset!");
+        // Validate selections
+        if (selectedLayout == null) {
+            showAlert("Please select a layout");
+            return;
+        }
+        if (selectedRuleset == null) {
+            showAlert("Please select a ruleset");
             return;
         }
 
-        // Clear previous moves from previous runs
+        // Clear previous log
         moveListView.getItems().clear();
+        
+        // Add log messages
+        moveListView.getItems().add("▶ Starting simulation...");
+        moveListView.getItems().add("Layout: " + selectedLayout.getName());
+        moveListView.getItems().add("Ruleset: " + selectedRuleset.getName());
+        moveListView.getItems().add("Max Attempts: " + maxAttempts);
+        moveListView.getItems().add("─────────────────");
 
-        // Reset robot position
-        robotRow = 0;
-        robotCol = 0;
-        robotDirection = "EAST";
-        drawGrid();
+        // Run simulation in background thread
+        new Thread(() -> {
+            try {
+                // Simulate running (replace with actual simulation logic)
+                Thread.sleep(1000);
+                
+                // Simulate random outcome for demo
+                String outcome = Math.random() > 0.5 ? "Success" : "Fail";
+                String details = outcome.equals("Success") 
+                    ? "Robot completed course successfully" 
+                    : "Robot encountered obstacle";
 
-        // Start simulation
-        runSimulation(maxAttempts);
+                // Save to database
+                simulationDAO.saveSimulationRun(
+                    selectedLayout.getId(),
+                    selectedRuleset.getId(),
+                    outcome,
+                    details
+                );
+
+                // Update UI
+                Platform.runLater(() -> {
+                    moveListView.getItems().add("✓ Simulation complete!");
+                    moveListView.getItems().add("Outcome: " + outcome);
+                    moveListView.getItems().add(details);
+                    
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("Simulation Complete");
+                    alert.setHeaderText("Simulation finished!");
+                    alert.setContentText("Result: " + outcome + "\n" + details);
+                    alert.showAndWait();
+                });
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                Platform.runLater(() -> {
+                    moveListView.getItems().add("✗ Error: " + e.getMessage());
+                });
+            }
+        }).start();
     }
 
-    // RUN SIMULATION
-    private void runSimulation(int maxAttempts) {
-        Timeline timeline = new Timeline();
-
-        // We'll calculate moves dynamically based on walls
-        for (int i = 0; i < maxAttempts; i++) {
-            final int step = i;
-
-            KeyFrame frame = new KeyFrame(
-                    Duration.millis(800 * (i + 1)),
-                    event -> {
-                        // Check if exit is in any adjacent cell
-                        String exitDirection = findExitDirection();
-
-                        if (exitDirection != null) {
-                            // Exit is nearby! Go directly to it
-                            turnToFace(exitDirection);
-                            moveForward();
-                            moveListView.getItems().add((step + 1) + ". Move toward EXIT!");
-                        } else {
-                            // No exit nearby, follow wall-following algorithm
-
-                            // Check if we can move forward
-                            turnRight();
-                            if (canMoveForward()) {
-                                moveForward();
-                                moveListView.getItems().add((step + 1) + ". Turn Right & Move Forward");
-                            } else {
-                                // Wall ahead! Turn left
-                                turnLeft();
-
-                                if (canMoveForward()) {
-                                    moveForward();
-                                    moveListView.getItems().add((step + 1) + ". Move Forward");
-                                } else {
-                                    turnLeft();
-                                    if (canMoveForward()) {
-                                        moveForward();
-                                        moveListView.getItems().add((step + 1) + ". Turn Left & Move Forward");
-                                    } else {
-                                        turnLeft();
-                                        if (canMoveForward()) {
-                                            moveForward();
-                                            moveListView.getItems().add((step + 1) + ". Turn Around & Move Forward");
-                                        } else {
-                                            moveListView.getItems().add((step + 1) + ". STUCK!");
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // Update the grid
-                        drawGrid();
-
-                        // Auto-scroll
-                        moveListView.scrollTo(moveListView.getItems().size() - 1);
-
-                        // Check if reached exit
-                        if (robotRow == exitRow && robotCol == exitCol) {
-                            timeline.stop();
-                            moveListView.getItems().add("EXIT FOUND!");
-                            showAlert("Exit found in " + (step + 1) + " moves!");
-                        } else if (step >= maxAttempts - 1) {
-                            showAlert("Max attempts reached. Exit not found.");
-                        }
-                    }
-            );
-
-            timeline.getKeyFrames().add(frame);
-        }
-
-        timeline.play();
-    }
-
-    // Find exit direction (returns direction if exit is adjacent, null otherwise)
-    private String findExitDirection() {
-        // Check NORTH
-        if (robotRow - 1 >= 0 && robotRow - 1 == exitRow && robotCol == exitCol) {
-            return "NORTH";
-        }
-
-        // Check SOUTH
-        if (robotRow + 1 < 10 && robotRow + 1 == exitRow && robotCol == exitCol) {
-            return "SOUTH";
-        }
-
-        // Check EAST
-        if (robotCol + 1 < 10 && robotRow == exitRow && robotCol + 1 == exitCol) {
-            return "EAST";
-        }
-
-        // Check WEST
-        if (robotCol - 1 >= 0 && robotRow == exitRow && robotCol - 1 == exitCol) {
-            return "WEST";
-        }
-
-        return null; // Exit not adjacent
-    }
-
-    // Turn to face a specific direction
-    private void turnToFace(String targetDirection) {
-        while (!robotDirection.equals(targetDirection)) {
-            turnRight();
-        }
-    }
-
-    // Check if robot can move forward
-    private boolean canMoveForward() {
-        int newRow = robotRow;
-        int newCol = robotCol;
-
-        // Calculate where we'd move to
-        switch (robotDirection) {
-            case "NORTH": newRow--; break;
-            case "SOUTH": newRow++; break;
-            case "EAST": newCol++; break;
-            case "WEST": newCol--; break;
-        }
-
-        // Check if the move is valid
-        // Valid if: within bounds AND not a wall
-        if (newRow < 0 || newRow >= 10 || newCol < 0 || newCol >= 10) {
-            return false;  // Out of bounds
-        }
-
-        if (layout[newRow][newCol] == 1) {
-            return false;  // Wall ahead
-        }
-
-        return true;  // Clear path!
-    }
-
-
-    // CALCULATES WHERE THE ROBOT MOVES BASED ON DIRECTION
-    //NORTH → row - 1 (move up)
-    //SOUTH → row + 1 (move down)
-    //EAST → col + 1 (move right)
-    //WEST → col - 1 (move left)
-
-
-    private void moveForward() {
-        int newRow = robotRow;
-        int newCol = robotCol;
-
-        switch (robotDirection) {
-            case "NORTH": newRow--; break;
-            case "SOUTH": newRow++; break;
-            case "EAST": newCol++; break;
-            case "WEST": newCol--; break;
-        }
-
-        // Check if move is valid (not out of bounds and not a wall)
-        if (newRow >= 0 && newRow < 10 && newCol >= 0 && newCol < 10 && layout[newRow][newCol] != 1) {
-            robotRow = newRow;
-            robotCol = newCol;
-        }
-    }
-
-    // TUNS ROBOT 90* COUNTER CLOCKWISE
-    private void turnLeft() {
-        switch (robotDirection) {
-            case "NORTH": robotDirection = "WEST"; break;
-            case "WEST": robotDirection = "SOUTH"; break;
-            case "SOUTH": robotDirection = "EAST"; break;
-            case "EAST": robotDirection = "NORTH"; break;
-        }
-    }
-
-    // TURNS ROBOT 90* CLOCKWISE
-    private void turnRight() {
-        switch (robotDirection) {
-            case "NORTH": robotDirection = "EAST"; break;
-            case "EAST": robotDirection = "SOUTH"; break;
-            case "SOUTH": robotDirection = "WEST"; break;
-            case "WEST": robotDirection = "NORTH"; break;
-        }
-    }
-
-    // TURNS ROBOT AROUND 180*
-    private void turnAround() {
-        switch (robotDirection) {
-            case "NORTH": robotDirection = "SOUTH"; break;
-            case "SOUTH": robotDirection = "NORTH"; break;
-            case "EAST": robotDirection = "WEST"; break;
-            case "WEST": robotDirection = "EAST"; break;
-        }
-    }
-
-
-    // LOADS THE SCENE
     @FXML
     private void handleBack(ActionEvent event) throws IOException {
-        Parent root = FXMLLoader.load(getClass().getResource("dashboard.fxml"));
-        Stage stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+        Parent root = FXMLLoader.load(getClass().getResource("hello-view.fxml"));
+        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         Scene scene = new Scene(root);
         stage.setScene(scene);
         stage.show();
     }
 
     private void showAlert(String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Simulation");
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle("Validation Error");
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    private void displayLayout(Layout layout) {
+        // Clear the grid first
+        factoryGrid.getChildren().clear();
+
+        // Parse grid size and obstacles from JSON
+        // Example gridData: {"size": "10x10", "obstacles": [[2,3], [4,5]]}
+        String gridData = layout.getGridData();
+        
+        // DEBUG: Print the actual gridData
+        System.out.println("=== Layout: " + layout.getName() + " ===");
+        System.out.println("GridData: " + gridData);
+        
+        java.util.List<int[]> obstacles = new java.util.ArrayList<>();
+        
+        // Simple JSON parsing - handles both formats
+        try {
+            if (gridData.contains("obstacles")) {
+                // Find obstacles array
+                int obstaclesStart = gridData.indexOf("\"obstacles\":");
+                if (obstaclesStart != -1) {
+                    String afterObstacles = gridData.substring(obstaclesStart + 12);
+                    int arrayStart = afterObstacles.indexOf("[");
+                    int arrayEnd = afterObstacles.indexOf("]");
+                    
+                    if (arrayStart != -1 && arrayEnd != -1) {
+                        String obstaclesContent = afterObstacles.substring(arrayStart + 1, arrayEnd);
+                        
+                        if (!obstaclesContent.trim().isEmpty()) {
+                            // Handle {"x":2,"y":3} format
+                            if (obstaclesContent.contains("\"x\"")) {
+                                String[] obstacleObjects = obstaclesContent.split("\\},\\{");
+                                for (String obj : obstacleObjects) {
+                                    obj = obj.replace("{", "").replace("}", "");
+                                    String[] parts = obj.split(",");
+                                    
+                                    int x = -1, y = -1;
+                                    for (String part : parts) {
+                                        if (part.contains("\"x\"")) {
+                                            x = Integer.parseInt(part.split(":")[1].trim());
+                                        } else if (part.contains("\"y\"")) {
+                                            y = Integer.parseInt(part.split(":")[1].trim());
+                                        }
+                                    }
+                                    if (x != -1 && y != -1) {
+                                        obstacles.add(new int[]{x, y});
+                                    }
+                                }
+                            }
+                            // Handle [[2,3],[4,5]] format
+                            else if (obstaclesContent.contains("[")) {
+                                obstaclesContent = obstaclesContent.replace("[", "").replace("]", "");
+                                String[] pairs = obstaclesContent.split(",");
+                                for (int i = 0; i < pairs.length - 1; i += 2) {
+                                    int x = Integer.parseInt(pairs[i].trim());
+                                    int y = Integer.parseInt(pairs[i + 1].trim());
+                                    obstacles.add(new int[]{x, y});
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error parsing gridData: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        // DEBUG: Print parsed obstacles
+        System.out.println("Found " + obstacles.size() + " obstacles:");
+        for (int[] obs : obstacles) {
+            System.out.println("  Position: [" + obs[0] + ", " + obs[1] + "]");
+        }
+        System.out.println("================\n");
+
+        // Create 10x10 grid
+        for (int row = 0; row < 10; row++) {
+            for (int col = 0; col < 10; col++) {
+                javafx.scene.layout.StackPane cell = new javafx.scene.layout.StackPane();
+                cell.setStyle("-fx-background-color: white; -fx-border-color: #ddd;");
+                cell.setPrefSize(40, 40);
+                
+                // Check if this cell is an obstacle
+                final int currentRow = row;
+                final int currentCol = col;
+                boolean isObstacle = obstacles.stream()
+                    .anyMatch(obs -> obs[0] == currentCol && obs[1] == currentRow); // x=col, y=row
+                
+                if (isObstacle) {
+                    cell.setStyle("-fx-background-color: #F44336; -fx-border-color: #ddd;");
+                    Label obstacleLabel = new Label("🚧");
+                    obstacleLabel.setStyle("-fx-font-size: 20px;");
+                    cell.getChildren().add(obstacleLabel);
+                }
+                
+                factoryGrid.add(cell, col, row);
+            }
+        }
+
+        // Add robot at starting position (0,0)
+        javafx.scene.layout.StackPane startCell = new javafx.scene.layout.StackPane();
+        startCell.setStyle("-fx-background-color: #2196F3; -fx-border-color: #ddd;");
+        startCell.setPrefSize(40, 40);
+        
+        Label robotLabel = new Label("🤖");
+        robotLabel.setStyle("-fx-font-size: 20px;");
+        startCell.getChildren().add(robotLabel);
+        
+        factoryGrid.add(startCell, 0, 0);
+
+        // Add goal position at (9,9)
+        javafx.scene.layout.StackPane goalCell = new javafx.scene.layout.StackPane();
+        goalCell.setStyle("-fx-background-color: #4CAF50; -fx-border-color: #ddd;");
+        goalCell.setPrefSize(40, 40);
+        Label goalLabel = new Label("🎯");
+        goalLabel.setStyle("-fx-font-size: 20px;");
+        goalCell.getChildren().add(goalLabel);
+        factoryGrid.add(goalCell, 9, 9);
     }
 }

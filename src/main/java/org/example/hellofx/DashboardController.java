@@ -23,7 +23,7 @@ import java.sql.Connection;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-public class SummaryController {
+public class DashboardController {
 
     @FXML
     private Label totalLayoutsLabel;
@@ -129,10 +129,11 @@ public class SummaryController {
         loadDashboardData();
     }
 
+    // Back button method (lowercase 's' to match FXML)
     @FXML
-    public void SwitchScene(ActionEvent event) throws IOException {
+    public void switchScene(ActionEvent event) throws IOException {
         Parent root = FXMLLoader.load(getClass().getResource("dashboard.fxml"));
-        Stage stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         Scene scene = new Scene(root);
         stage.setScene(scene);
         stage.show();

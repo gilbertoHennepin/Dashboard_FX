@@ -4,6 +4,7 @@ import org.example.hellofx.dataClasses.RecentSimulationRun;
 import org.example.hellofx.dataClasses.DashboardSummary;
 
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,20 +39,39 @@ public class DashboardDAO {
         return 0;
     }
 
-    // Get the 5 most recent simulation runs
+    // Get the 5 most recent simulation runs AND newly created layouts
     public List<RecentSimulationRun> getRecentSimulationRuns(int limit) throws SQLException {
+        // Combined query: get simulation runs AND new layouts that haven't been run yet
         String sql = """
-            SELECT 
-                sr.id,
-                l.name as layout_name,
-                r.name as ruleset_name,
-                sr.outcome,
-                sr.run_timestamp,
-                sr.details
-            FROM simulation_runs sr
-            JOIN layouts l ON sr.layout_id = l.id
-            JOIN rulesets r ON sr.ruleset_id = r.id
-            ORDER BY sr.run_timestamp DESC
+            (
+                SELECT 
+                    sr.id,
+                    l.name as layout_name,
+                    r.name as ruleset_name,
+                    sr.outcome,
+                    sr.run_timestamp as timestamp,
+                    sr.details,
+                    'run' as type
+                FROM simulation_runs sr
+                JOIN layouts l ON sr.layout_id = l.id
+                JOIN rulesets r ON sr.ruleset_id = r.id
+            )
+            UNION ALL
+            (
+                SELECT 
+                    l.id,
+                    l.name as layout_name,
+                    'N/A' as ruleset_name,
+                    'Untried' as outcome,
+                    l.created_at as timestamp,
+                    '' as details,
+                    'layout' as type
+                FROM layouts l
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM simulation_runs sr WHERE sr.layout_id = l.id
+                )
+            )
+            ORDER BY timestamp DESC
             LIMIT ?
         """;
 
@@ -67,10 +87,11 @@ public class DashboardDAO {
                     run.setRulesetName(rs.getString("ruleset_name"));
                     run.setOutcome(rs.getString("outcome"));
                     
-                    Timestamp timestamp = rs.getTimestamp("run_timestamp");
+                    Timestamp timestamp = rs.getTimestamp("timestamp");
                     run.setTimestamp(timestamp.toLocalDateTime());
                     
-                    run.setDetails(rs.getString("details"));
+                    String details = rs.getString("details");
+                    run.setDetails(details != null ? details : "");
                     runs.add(run);
                 }
             }

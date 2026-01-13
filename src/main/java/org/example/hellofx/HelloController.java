@@ -58,7 +58,7 @@ public class HelloController {
         stage.show();
     }
     public void SimulationRunner(ActionEvent event) throws IOException {
-        Parent root = FXMLLoader.load(getClass().getResource("SimulationRunner.fxml")); // Ensure Scene2.fxml exists
+        Parent root = FXMLLoader.load(getClass().getResource("SimulationRunner.fxml"));
         stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         scene = new Scene(root);
         stage.setScene(scene);
