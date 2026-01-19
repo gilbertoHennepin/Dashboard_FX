@@ -1,7 +1,16 @@
 package org.example.hellofx;
 
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
+import java.io.IOException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+
+import com.google.genai.Client;
+import com.google.genai.types.Content;
+import com.google.genai.types.GenerateContentConfig;
+import com.google.genai.types.GenerateContentResponse;
+import com.google.genai.types.Part;
+
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -9,13 +18,17 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
-import javafx.util.Duration;
-
-import java.io.IOException;
 
 
 // CLASS DECLARATIONS & AND FIELDS
@@ -42,6 +55,15 @@ public class SimulationRunnerController {
     @FXML
     private ListView<String> moveListView;
 
+    @FXML
+    private TextArea botResponseArea;
+
+    @FXML
+    private TextField commandInput;
+
+    @FXML
+    private Button sendCommandButton;
+
 
     // SIM VARIABLES
     private int robotRow = 0; // ROBOT STARTS AT POSITION (0,0)
@@ -52,6 +74,13 @@ public class SimulationRunnerController {
 
     //GRID
     private int[][] layout = new int[10][10];  // 10x10 grid layout WHERE  (0 = open, 1 = wall)
+
+    // GEMINI AI CLIENT
+    private Client geminiClient;
+    private String systemInstructionText;
+    private boolean simulationActive = false;
+    private ScheduledExecutorService executorService;
+    private int moveCount = 0;
 
 
     // INITIALIZE METHOD | RUNS AUTOMATICALLY WHEN THE FXML LOADS
@@ -65,9 +94,6 @@ public class SimulationRunnerController {
         maxAttemptsSpinner.setValueFactory(valueFactory);
 
         // ADDS OPTIONS FOR DROPDOWN MENUS
-        // "selectFirst()" AUTOMATICALLY SELECTS THE TEST & RULESET 1
-        //TODO  *****WILL LATER CONNECT THIS TO THE DATA FROM DATABASE*****
-
         layoutComboBox.setItems(FXCollections.observableArrayList(
                 "Test Layout 1", "Test Layout 2"
         ));
@@ -83,6 +109,50 @@ public class SimulationRunnerController {
 
         // DRAW'S ALL THE CELLS ON SCREEN
         drawGrid();
+
+        // INITIALIZE GEMINI CLIENT
+        initializeGemini();
+
+        // Make command input handle Enter key
+        commandInput.setOnKeyPressed(event -> {
+            if (event.getCode().toString().equals("ENTER")) {
+                handleSendCommand();
+            }
+        });
+
+        botResponseArea.setText("Robot ready! Give me commands to move around the factory.\nExample: 'turn right'");
+        runButton.setText("Reset");
+        runButton.setOnAction(event -> handleReset());
+    }
+
+    // INITIALIZE GEMINI CLIENT
+    private void initializeGemini() {
+        String apiKey = System.getenv("GEMINI_API_KEY");
+        if (apiKey == null) {
+            botResponseArea.setText("Error: GEMINI_API_KEY environment variable not set!");
+            sendCommandButton.setDisable(true);
+            return;
+        }
+
+        try {
+            geminiClient = Client.builder().apiKey(apiKey).build();
+
+            // Read System Instruction from file
+            try {
+                systemInstructionText = new String(
+                        SimulationRunnerController.class.getClassLoader()
+                                .getResourceAsStream("system_instructions.txt").readAllBytes()
+                );
+            } catch (Exception e) {
+                systemInstructionText = "You are a helpful robot navigator.";
+            }
+
+            executorService = Executors.newSingleThreadScheduledExecutor();
+            simulationActive = true;
+        } catch (Exception e) {
+            botResponseArea.setText("Error initializing Gemini: " + e.getMessage());
+            sendCommandButton.setDisable(true);
+        }
     }
 
     // INITIALIZE SAMPLE LAYOUT
@@ -186,107 +256,128 @@ public class SimulationRunnerController {
         }
     }
 
-    // HANDLE RUN BUTTON
-    // GETS VALUES FORM THE DROPWDOWNS AND SPINNER
-    //CHECKS IF USER HAS SELECTED A LAYOUT AND SPINNER
-    // IF NOT SHOWS AN ERROR AND STOPS
+    // HANDLE RUN BUTTON (NOW RESET)
     @FXML
-    private void handleRun() {
-        String selectedLayout = layoutComboBox.getValue();
-        String selectedRuleset = rulesetComboBox.getValue();
-        int maxAttempts = maxAttemptsSpinner.getValue();
-
-        if (selectedLayout == null || selectedRuleset == null) {
-            showAlert("Please select both a layout and ruleset!");
-            return;
-        }
-
-        // Clear previous moves from previous runs
-        moveListView.getItems().clear();
-
-        // Reset robot position
+    private void handleReset() {
         robotRow = 0;
         robotCol = 0;
         robotDirection = "EAST";
+        moveCount = 0;
         drawGrid();
-
-        // Start simulation
-        runSimulation(maxAttempts);
+        moveListView.getItems().clear();
+        botResponseArea.setText("Robot reset to starting position (0,0) facing EAST.\nReady for new commands!");
+        commandInput.clear();
+        commandInput.requestFocus();
     }
 
-    // RUN SIMULATION
-    private void runSimulation(int maxAttempts) {
-        Timeline timeline = new Timeline();
-
-        // We'll calculate moves dynamically based on walls
-        for (int i = 0; i < maxAttempts; i++) {
-            final int step = i;
-
-            KeyFrame frame = new KeyFrame(
-                    Duration.millis(800 * (i + 1)),
-                    event -> {
-                        // Check if exit is in any adjacent cell
-                        String exitDirection = findExitDirection();
-
-                        if (exitDirection != null) {
-                            // Exit is nearby! Go directly to it
-                            turnToFace(exitDirection);
-                            moveForward();
-                            moveListView.getItems().add((step + 1) + ". Move toward EXIT!");
-                        } else {
-                            // No exit nearby, follow wall-following algorithm
-
-                            // Check if we can move forward
-                            turnRight();
-                            if (canMoveForward()) {
-                                moveForward();
-                                moveListView.getItems().add((step + 1) + ". Turn Right & Move Forward");
-                            } else {
-                                // Wall ahead! Turn left
-                                turnLeft();
-
-                                if (canMoveForward()) {
-                                    moveForward();
-                                    moveListView.getItems().add((step + 1) + ". Move Forward");
-                                } else {
-                                    turnLeft();
-                                    if (canMoveForward()) {
-                                        moveForward();
-                                        moveListView.getItems().add((step + 1) + ". Turn Left & Move Forward");
-                                    } else {
-                                        turnLeft();
-                                        if (canMoveForward()) {
-                                            moveForward();
-                                            moveListView.getItems().add((step + 1) + ". Turn Around & Move Forward");
-                                        } else {
-                                            moveListView.getItems().add((step + 1) + ". STUCK!");
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // Update the grid
-                        drawGrid();
-
-                        // Auto-scroll
-                        moveListView.scrollTo(moveListView.getItems().size() - 1);
-
-                        // Check if reached exit
-                        if (robotRow == exitRow && robotCol == exitCol) {
-                            timeline.stop();
-                            moveListView.getItems().add("EXIT FOUND!");
-                            showAlert("Exit found in " + (step + 1) + " moves!");
-                        } else if (step >= maxAttempts - 1) {
-                            showAlert("Max attempts reached. Exit not found.");
-                        }
-                    }
-            );
-
-            timeline.getKeyFrames().add(frame);
+    // HANDLE SEND COMMAND BUTTON
+    @FXML
+    private void handleSendCommand() {
+        String userCommand = commandInput.getText().trim();
+        if (userCommand.isEmpty()) {
+            return;
         }
 
-        timeline.play();
+        commandInput.clear();
+        commandInput.setDisable(true);
+        sendCommandButton.setDisable(true);
+
+        if (userCommand.equalsIgnoreCase("exit")) {
+            simulationActive = false;
+            botResponseArea.appendText("\nRobot shutting down. Goodbye!");
+            commandInput.setDisable(true);
+            sendCommandButton.setDisable(true);
+            return;
+        }
+
+        // Send command to Gemini in background thread
+        executorService.execute(() -> {
+            try {
+                String response = queryGemini(userCommand);
+                Platform.runLater(() -> {
+                    botResponseArea.appendText("\nYou: " + userCommand + "\n");
+                    botResponseArea.appendText("Robot: " + response + "\n");
+                    botResponseArea.setScrollTop(Double.MAX_VALUE); // Auto-scroll to bottom
+
+                    // Execute the robot movement based on Gemini's response
+                    executeCommand(userCommand.toLowerCase());
+
+                    commandInput.setDisable(false);
+                    sendCommandButton.setDisable(false);
+                    commandInput.requestFocus();
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    botResponseArea.appendText("\nError: " + e.getMessage() + "\n");
+                    commandInput.setDisable(false);
+                    sendCommandButton.setDisable(false);
+                    commandInput.requestFocus();
+                });
+            }
+        });
+    }
+
+    // QUERY GEMINI WITH USER COMMAND
+    private String queryGemini(String userPrompt) {
+        try {
+            Content systemInstruction = Content.builder()
+                    .parts(Part.builder()
+                            .text(systemInstructionText)
+                            .build())
+                    .build();
+
+            GenerateContentConfig config = GenerateContentConfig.builder()
+                    .systemInstruction(systemInstruction)
+                    .temperature(0.3F)
+                    .build();
+
+            GenerateContentResponse response = geminiClient.models.generateContent(
+                    "gemini-2.5-flash",
+                    userPrompt,
+                    config
+            );
+
+            return response.text();
+        } catch (Exception e) {
+            return "My apologies I can't complete this.";
+        }
+    }
+
+    // EXECUTE ROBOT MOVEMENT BASED ON COMMAND
+    private void executeCommand(String command) {
+        command = command.toLowerCase();
+
+        // Simple command parsing
+        if (command.contains("forward") || command.contains("move forward") || command.contains("go forward")) {
+            if (canMoveForward()) {
+                moveForward();
+                moveCount++;
+                moveListView.getItems().add(moveCount + ". Move Forward - Now at (" + robotRow + "," + robotCol + ")");
+            }
+        } else if (command.contains("left") || command.contains("turn left")) {
+            turnLeft();
+            moveListView.getItems().add(moveCount + ". Turn Left - Now facing " + robotDirection);
+        } else if (command.contains("right") || command.contains("turn right")) {
+            turnRight();
+            moveListView.getItems().add(moveCount + ". Turn Right - Now facing " + robotDirection);
+        } else if (command.contains("backward") || command.contains("back")) {
+            turnAround();
+            if (canMoveForward()) {
+                moveForward();
+                moveCount++;
+                moveListView.getItems().add(moveCount + ". Move Backward - Now at (" + robotRow + "," + robotCol + ")");
+            }
+            turnAround();
+        }
+
+        drawGrid();
+        moveListView.scrollTo(moveListView.getItems().size() - 1);
+
+        // Check if reached exit
+        if (robotRow == exitRow && robotCol == exitCol) {
+            botResponseArea.appendText("\n🎉 EXIT FOUND in " + moveCount + " moves! 🎉\n");
+            moveListView.getItems().add("*** EXIT FOUND! ***");
+        }
     }
 
     // Find exit direction (returns direction if exit is adjacent, null otherwise)
@@ -312,13 +403,6 @@ public class SimulationRunnerController {
         }
 
         return null; // Exit not adjacent
-    }
-
-    // Turn to face a specific direction
-    private void turnToFace(String targetDirection) {
-        while (!robotDirection.equals(targetDirection)) {
-            turnRight();
-        }
     }
 
     // Check if robot can move forward
@@ -407,18 +491,15 @@ public class SimulationRunnerController {
     // LOADS THE SCENE
     @FXML
     private void handleBack(ActionEvent event) throws IOException {
+        // Clean up resources
+        simulationActive = false;
+        if (executorService != null && !executorService.isShutdown()) {
+            executorService.shutdownNow();
+        }
+
         Parent root = FXMLLoader.load(getClass().getResource("dashboard.fxml"));
         Stage stage = (Stage)((Node)event.getSource()).getScene().getWindow();
         Scene scene = new Scene(root);
         stage.setScene(scene);
         stage.show();
-    }
-
-    private void showAlert(String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Simulation");
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-}
+    }}

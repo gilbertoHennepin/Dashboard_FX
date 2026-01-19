@@ -5,6 +5,8 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.Spinner?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
@@ -52,7 +54,7 @@
                 <Spinner fx:id="maxAttemptsSpinner" layoutX="404.0" layoutY="24.0" prefHeight="25.0" prefWidth="132.0" />
             </children>
         </AnchorPane>
-        <GridPane fx:id="factoryGrid" layoutX="12.0" layoutY="126.0" prefHeight="274.0" prefWidth="369.0" style="-fx-grid-lines-visible: true; -fx-background-color: white;">
+        <GridPane fx:id="factoryGrid" layoutX="12.0" layoutY="126.0" prefHeight="274.0" prefWidth="269.0" style="-fx-grid-lines-visible: true; -fx-background-color: white;">
             <columnConstraints>
                 <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
                 <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
@@ -78,6 +80,17 @@
                 <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
             </rowConstraints>
         </GridPane>
-        <ListView fx:id="moveListView" layoutX="395.0" layoutY="132.0" prefHeight="268.0" prefWidth="193.0" style="-fx-background-color: white;" />
+        <Label layoutX="295.0" layoutY="132.0" prefHeight="17.0" prefWidth="70.0" text="Moves:" textFill="#000000">
+            <font>
+                <Font name="System Bold" size="11.0" />
+            </font>
+        </Label>
+        <ListView fx:id="moveListView" layoutX="295.0" layoutY="152.0" prefHeight="150.0" prefWidth="293.0" style="-fx-background-color: white;" />
+        <Label layoutX="295.0" layoutY="308.0" prefHeight="17.0" prefWidth="70.0" text="Bot Response:" textFill="#000000">
+            <font>
+                <Font name="System Bold" size="11.0" />
+            </font>
+        </Label>
+        <TextArea fx:id="botResponseArea" editable="false" layoutX="12.0" layoutY="330.0" prefHeight="76.0" prefWidth="576.0" wrapText="true" style="-fx-background-color: white; -fx-font-size: 10;" />
     </children>
 </AnchorPane>
