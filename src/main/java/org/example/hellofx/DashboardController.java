@@ -59,6 +59,10 @@ public class DashboardController {
         setupTableColumns();
         loadDashboardData();
     }
+    // Add this method to your DashboardController class
+public void refreshData() {
+    loadDashboardData();
+}
 
     private void setupTableColumns() {
         // Set up cell value factories for each column

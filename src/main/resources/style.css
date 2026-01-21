@@ -1,0 +1,43 @@
+/* src/main/resources/style.css */
+
+/* Positions the Chatbot in the bottom-right corner of the AnchorPane */
+.chatbot-overlay {
+    -fx-alignment: bottom-right;
+    -fx-background-color: transparent; /* Transparent so it doesn't block clicks */
+}
+
+/* The Chat Box (Hidden by default) */
+.chat-box {
+    -fx-background-color: white;
+    -fx-background-radius: 10;
+    -fx-border-color: #ccc;
+    -fx-border-radius: 10;
+    -fx-spacing: 5;
+    -fx-padding: 5;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 5);
+}
+
+.chat-header {
+    -fx-background-color: #4aa6f2; /* Matches your top bar */
+    -fx-background-radius: 5;
+    -fx-padding: 10;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.chat-history {
+    -fx-pref-height: 250px;
+    -fx-fit-to-width: true;
+}
+
+.input-area {
+    -fx-spacing: 5;
+}
+
+/* The Robot Image Button */
+.robot-button {
+    -fx-cursor: hand;
+}
+.robot-button:hover {
+    -fx-opacity: 0.8;
+}

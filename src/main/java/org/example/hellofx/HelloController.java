@@ -65,8 +65,12 @@ public class HelloController {
         stage.show();
         // DASHBOARD/SUMMARY
     }
+    // DASHBOARD/SUMMARY
     public void Summary(ActionEvent event) throws IOException {
-        Parent root = FXMLLoader.load(getClass().getResource("Summary.fxml")); // Changed from dashboard.fxml
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("Summary.fxml"));
+        Parent root = loader.load();
+        DashboardController controller = loader.getController();
+        controller.refreshData();
         stage = (Stage)((Node)event.getSource()).getScene().getWindow();
         scene = new Scene(root);
         stage.setScene(scene);
