@@ -1,4 +1,5 @@
 module org.example.hellofx {
+    requires javafx.base;
     requires javafx.controls;
     requires javafx.fxml;
     requires java.desktop;

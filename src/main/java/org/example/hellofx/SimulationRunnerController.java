@@ -40,6 +40,10 @@ public class SimulationRunnerController {
     private Button runButton;
 
     private SimulationDAO simulationDAO;
+    private int[] currentRobotPos = {0, 0}; // Track current robot position
+    private int[] robotStartPos = {0, 0}; // Store initial robot position
+    private int[] exitPosition = {9, 9}; // Store exit position
+    private javafx.scene.layout.StackPane robotCell; // Reference to robot cell
 
     @FXML
     public void initialize() {
@@ -53,6 +57,7 @@ public class SimulationRunnerController {
             Layout selected = layoutComboBox.getValue();
             if (selected != null) {
                 displayLayout(selected);
+                runButton.setText("▶ Run Simulation"); // Reset button text when layout changes
             }
         });
 
@@ -124,6 +129,14 @@ public class SimulationRunnerController {
             return;
         }
 
+        // Reset robot to start position
+        currentRobotPos[0] = robotStartPos[0];
+        currentRobotPos[1] = robotStartPos[1];
+        
+        // Visually reset robot on grid
+        factoryGrid.getChildren().remove(robotCell);
+        factoryGrid.add(robotCell, currentRobotPos[0], currentRobotPos[1]);
+
         // Clear previous log
         moveListView.getItems().clear();
         
@@ -134,17 +147,19 @@ public class SimulationRunnerController {
         moveListView.getItems().add("Max Attempts: " + maxAttempts);
         moveListView.getItems().add("─────────────────");
 
+        // Disable run button during simulation
+        runButton.setDisable(true);
+
         // Run simulation in background thread
         new Thread(() -> {
             try {
-                // Simulate running (replace with actual simulation logic)
-                Thread.sleep(1000);
+                // Simulate robot movement
+                boolean success = simulateRobotMovement(selectedLayout);
                 
-                // Simulate random outcome for demo
-                String outcome = Math.random() > 0.5 ? "Success" : "Fail";
-                String details = outcome.equals("Success") 
-                    ? "Robot completed course successfully" 
-                    : "Robot encountered obstacle";
+                String outcome = success ? "Success" : "Fail";
+                String details = success 
+                    ? "Robot reached the goal successfully" 
+                    : "Robot failed to reach the goal";
 
                 // Save to database
                 simulationDAO.saveSimulationRun(
@@ -156,9 +171,13 @@ public class SimulationRunnerController {
 
                 // Update UI
                 Platform.runLater(() -> {
+                    moveListView.getItems().add("─────────────────");
                     moveListView.getItems().add("✓ Simulation complete!");
                     moveListView.getItems().add("Outcome: " + outcome);
                     moveListView.getItems().add(details);
+                    
+                    runButton.setDisable(false);
+                    runButton.setText("🔄 Retry Simulation"); // Change button text
                     
                     Alert alert = new Alert(Alert.AlertType.INFORMATION);
                     alert.setTitle("Simulation Complete");
@@ -171,14 +190,144 @@ public class SimulationRunnerController {
                 e.printStackTrace();
                 Platform.runLater(() -> {
                     moveListView.getItems().add("✗ Error: " + e.getMessage());
+                    runButton.setDisable(false);
+                    runButton.setText("🔄 Retry Simulation"); // Change button text even on error
                 });
             }
         }).start();
     }
 
+    private boolean simulateRobotMovement(Layout layout) throws InterruptedException {
+        // Reset robot to start position
+        Platform.runLater(() -> {
+            factoryGrid.getChildren().remove(robotCell);
+            factoryGrid.add(robotCell, currentRobotPos[0], currentRobotPos[1]);
+        });
+
+        // Parse obstacles from layout
+        java.util.List<int[]> obstacles = parseObstacles(layout.getGridData());
+        
+        // Simple pathfinding: try to move towards goal
+        int steps = 0;
+        int maxSteps = 100; // Prevent infinite loops
+        
+        while (steps < maxSteps) {
+            steps++;
+            Thread.sleep(500); // Delay for animation
+            
+            int currentX = currentRobotPos[0];
+            int currentY = currentRobotPos[1];
+            int goalX = exitPosition[0];
+            int goalY = exitPosition[1];
+            
+            // Check if reached goal
+            if (currentX == goalX && currentY == goalY) {
+                Platform.runLater(() -> {
+                    moveListView.getItems().add("🎯 Reached goal!");
+                });
+                return true;
+            }
+            
+            // Try to move towards goal (simple AI)
+            int newX = currentX;
+            int newY = currentY;
+            
+            // Move horizontally first
+            if (currentX < goalX) {
+                newX = currentX + 1;
+            } else if (currentX > goalX) {
+                newX = currentX - 1;
+            }
+            // Then move vertically
+            else if (currentY < goalY) {
+                newY = currentY + 1;
+            } else if (currentY > goalY) {
+                newY = currentY - 1;
+            }
+            
+            // Check if new position is valid
+            final int nextX = newX;
+            final int nextY = newY;
+            boolean isObstacle = obstacles.stream()
+                .anyMatch(obs -> obs[0] == nextX && obs[1] == nextY);
+            boolean isOutOfBounds = nextX < 0 || nextX >= 10 || nextY < 0 || nextY >= 10;
+            
+            if (isObstacle) {
+                Platform.runLater(() -> {
+                    moveListView.getItems().add("🚧 Hit obstacle at (" + nextX + ", " + nextY + ")");
+                });
+                return false;
+            }
+            
+            if (isOutOfBounds) {
+                Platform.runLater(() -> {
+                    moveListView.getItems().add("⚠ Went out of bounds!");
+                });
+                return false;
+            }
+            
+            // Move robot
+            currentRobotPos[0] = newX;
+            currentRobotPos[1] = newY;
+            
+            Platform.runLater(() -> {
+                factoryGrid.getChildren().remove(robotCell);
+                factoryGrid.add(robotCell, currentRobotPos[0], currentRobotPos[1]);
+                moveListView.getItems().add("➜ Moved to (" + currentRobotPos[0] + ", " + currentRobotPos[1] + ")");
+            });
+        }
+        
+        // Exceeded max steps
+        Platform.runLater(() -> {
+            moveListView.getItems().add("⚠ Max steps exceeded!");
+        });
+        return false;
+    }
+
+    private java.util.List<int[]> parseObstacles(String gridData) {
+        java.util.List<int[]> obstacles = new java.util.ArrayList<>();
+        try {
+            if (gridData.contains("obstacles")) {
+                int obstaclesStart = gridData.indexOf("\"obstacles\":");
+                if (obstaclesStart != -1) {
+                    String afterObstacles = gridData.substring(obstaclesStart + 12);
+                    int arrayStart = afterObstacles.indexOf("[");
+                    int arrayEnd = afterObstacles.indexOf("]");
+                    
+                    if (arrayStart != -1 && arrayEnd != -1) {
+                        String obstaclesContent = afterObstacles.substring(arrayStart + 1, arrayEnd);
+                        
+                        if (!obstaclesContent.trim().isEmpty() && obstaclesContent.contains("\"x\"")) {
+                            String[] obstacleObjects = obstaclesContent.split("\\},\\{");
+                            for (String obj : obstacleObjects) {
+                                obj = obj.replace("{", "").replace("}", "");
+                                String[] parts = obj.split(",");
+                                
+                                int x = -1, y = -1;
+                                for (String part : parts) {
+                                    if (part.contains("\"x\"")) {
+                                        x = Integer.parseInt(part.split(":")[1].trim());
+                                    } else if (part.contains("\"y\"")) {
+                                        y = Integer.parseInt(part.split(":")[1].trim());
+                                    }
+                                }
+                                if (x != -1 && y != -1) {
+                                    obstacles.add(new int[]{x, y});
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error parsing obstacles: " + e.getMessage());
+        }
+        return obstacles;
+    }
+
     @FXML
     private void handleBack(ActionEvent event) throws IOException {
-        Parent root = FXMLLoader.load(getClass().getResource("hello-view.fxml"));
+        Parent root = FXMLLoader.load(getClass().getResource("dashboard.fxml"));
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         Scene scene = new Scene(root);
         stage.setScene(scene);
@@ -206,9 +355,50 @@ public class SimulationRunnerController {
         System.out.println("GridData: " + gridData);
         
         java.util.List<int[]> obstacles = new java.util.ArrayList<>();
+        int[] robotStart = {0, 0}; // default
+        int[] exitPos = {9, 9}; // default
+        
+        // Store for later use
+        robotStartPos = robotStart;
+        exitPosition = exitPos;
+        currentRobotPos = new int[]{robotStart[0], robotStart[1]};
         
         // Simple JSON parsing - handles both formats
         try {
+            // Parse robotStart
+            if (gridData.contains("\"robotStart\"")) {
+                int startIndex = gridData.indexOf("\"robotStart\":");
+                String afterStart = gridData.substring(startIndex);
+                int xIndex = afterStart.indexOf("\"x\":");
+                int yIndex = afterStart.indexOf("\"y\":");
+                if (xIndex != -1 && yIndex != -1) {
+                    String xStr = afterStart.substring(xIndex + 4, afterStart.indexOf(",", xIndex));
+                    String yStr = afterStart.substring(yIndex + 4, afterStart.indexOf("}", yIndex));
+                    robotStart[0] = Integer.parseInt(xStr.trim());
+                    robotStart[1] = Integer.parseInt(yStr.trim());
+                    robotStartPos = new int[]{robotStart[0], robotStart[1]};
+                    currentRobotPos = new int[]{robotStart[0], robotStart[1]};
+                    System.out.println("Robot Start: [" + robotStart[0] + ", " + robotStart[1] + "]");
+                }
+            }
+            
+            // Parse exit
+            if (gridData.contains("\"exit\"")) {
+                int exitIndex = gridData.indexOf("\"exit\":");
+                String afterExit = gridData.substring(exitIndex);
+                int xIndex = afterExit.indexOf("\"x\":");
+                int yIndex = afterExit.indexOf("\"y\":");
+                if (xIndex != -1 && yIndex != -1) {
+                    String xStr = afterExit.substring(xIndex + 4, afterExit.indexOf(",", xIndex));
+                    String yStr = afterExit.substring(yIndex + 4, afterExit.indexOf("}", yIndex));
+                    exitPos[0] = Integer.parseInt(xStr.trim());
+                    exitPos[1] = Integer.parseInt(yStr.trim());
+                    exitPosition = new int[]{exitPos[0], exitPos[1]};
+                    System.out.println("Exit Position: [" + exitPos[0] + ", " + exitPos[1] + "]");
+                }
+            }
+            
+            // Parse obstacles
             if (gridData.contains("obstacles")) {
                 // Find obstacles array
                 int obstaclesStart = gridData.indexOf("\"obstacles\":");
@@ -291,24 +481,24 @@ public class SimulationRunnerController {
             }
         }
 
-        // Add robot at starting position (0,0)
-        javafx.scene.layout.StackPane startCell = new javafx.scene.layout.StackPane();
-        startCell.setStyle("-fx-background-color: #2196F3; -fx-border-color: #ddd;");
-        startCell.setPrefSize(40, 40);
+        // Add robot at actual start position from database
+        robotCell = new javafx.scene.layout.StackPane();
+        robotCell.setStyle("-fx-background-color: #2196F3; -fx-border-color: #ddd;");
+        robotCell.setPrefSize(40, 40);
         
         Label robotLabel = new Label("🤖");
         robotLabel.setStyle("-fx-font-size: 20px;");
-        startCell.getChildren().add(robotLabel);
+        robotCell.getChildren().add(robotLabel);
         
-        factoryGrid.add(startCell, 0, 0);
+        factoryGrid.add(robotCell, robotStart[0], robotStart[1]); // x=col, y=row
 
-        // Add goal position at (9,9)
+        // Add goal at actual exit position from database
         javafx.scene.layout.StackPane goalCell = new javafx.scene.layout.StackPane();
         goalCell.setStyle("-fx-background-color: #4CAF50; -fx-border-color: #ddd;");
         goalCell.setPrefSize(40, 40);
         Label goalLabel = new Label("🎯");
         goalLabel.setStyle("-fx-font-size: 20px;");
         goalCell.getChildren().add(goalLabel);
-        factoryGrid.add(goalCell, 9, 9);
+        factoryGrid.add(goalCell, exitPos[0], exitPos[1]); // x=col, y=row
     }
 }
