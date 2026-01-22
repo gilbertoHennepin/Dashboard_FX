@@ -1,0 +1,70 @@
+package org.example.hellofx;
+
+import com.google.genai.Client;
+import com.google.genai.types.Content;
+import com.google.genai.types.GenerateContentConfig;
+import com.google.genai.types.GenerateContentResponse;
+import com.google.genai.types.Part;
+
+import java.util.Scanner;
+
+public class ChatBotGemini {
+    public static void main(String[] args) {
+        String apiKey = System.getenv("GEMINI_API_KEY");
+        if (apiKey == null) return;
+
+        Client client = Client.builder().apiKey(apiKey).build();
+
+        // 1. Read System Instruction from file
+        String systemInstructionText;
+        try {
+            systemInstructionText = new String(
+                    ChatBotGemini.class.getClassLoader().getResourceAsStream("system_instructions.txt").readAllBytes()
+            );
+        } catch (Exception e) {
+            System.err.println("Error reading system_instructions.txt: " + e.getMessage());
+            // Fallback to default instructions
+            systemInstructionText = "You are a helpful assistant.";
+        }
+
+        // 2. Create System Instruction from file content
+        Content systemInstruction = Content.builder()
+                .parts(Part.builder()
+                        .text(systemInstructionText)
+                        .build())
+                .build();
+
+        // 3. Create the Config object and attach the instruction
+        GenerateContentConfig config = GenerateContentConfig.builder()
+                .systemInstruction(systemInstruction)
+                .temperature(0.3F) // low temperature to eliminate hallucinations
+                .build();
+
+        System.out.println("--- Robot Chatbot initialized  ---");
+
+        try (Scanner scanner = new Scanner(System.in)) {
+            while (true) {
+                System.out.print("Enter a command (type exit to quit): ");
+                String userPrompt = scanner.nextLine();
+                if (userPrompt.equalsIgnoreCase("exit")){
+                    System.out.println("Goodbye!");
+                    break;
+                }
+
+                try {
+                    // Pass the config into the generateContent method
+                    GenerateContentResponse response = client.models.generateContent(
+                            "gemini-2.5-flash",
+                            userPrompt,
+                            config // <--- This applies the system prompt!
+                    );
+
+                    System.out.println("Gemini: " + response.text());
+                    System.out.println("---");
+                } catch (Exception e) {
+                    System.err.println("Error: " + e.getMessage());
+                }
+            }
+        }
+    }
+}

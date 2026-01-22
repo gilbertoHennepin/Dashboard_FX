@@ -1,17 +1,123 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
 
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.example.hellofx.Scene2Controller"
+            style="-fx-background-color: #f5f5f5;">
 
-<!-- CREATE TAB
+    <!-- Top Bar -->
+    <top>
+        <VBox>
+            <!-- Header -->
+            <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-background-color: #d3d3d3;" prefHeight="30">
+                <padding>
+                    <Insets top="5" right="10" bottom="5" left="14"/>
+                </padding>
+                <Label text="Create Factory Layout" style="-fx-font-weight: bold; -fx-font-size: 12px;"/>
+            </HBox>
+            
+            <!-- Blue bar -->
+            <AnchorPane style="-fx-background-color: #4aa6f2;" prefHeight="37"/>
+            
+            <!-- Back button and controls -->
+            <HBox spacing="15" alignment="CENTER_LEFT" style="-fx-background-color: #f5f5f5;">
+                <padding>
+                    <Insets top="10" right="15" bottom="10" left="14"/>
+                </padding>
+                
+                <Button text="Back" onAction="#switchToSummary" 
+                        style="-fx-background-color: #5d6bff; -fx-text-fill: white; -fx-font-weight: bold;"
+                        prefHeight="34" prefWidth="91"/>
+                
+                <Separator orientation="VERTICAL"/>
+                
+                <!-- Layout Name -->
+                <Label text="Layout Name:" style="-fx-font-weight: bold;"/>
+                <TextField fx:id="layoutNameField" promptText="Enter layout name" prefWidth="200"/>
+                
+                <Button text="Save Layout" fx:id="saveButton" onAction="#saveLayout"
+                        style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;"
+                        prefHeight="34" prefWidth="100"/>
+                
+                <Button text="Clear Grid" onAction="#clearGrid"
+                        style="-fx-background-color: #F44336; -fx-text-fill: white; -fx-font-weight: bold;"
+                        prefHeight="34" prefWidth="100"/>
+            </HBox>
+        </VBox>
+    </top>
 
- -->
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.AnchorPane?>
+    <!-- Main Content Area -->
+    <center>
+        <HBox spacing="20" style="-fx-background-color: #f5f5f5;">
+            <padding>
+                <Insets top="20" right="20" bottom="20" left="20"/>
+            </padding>
 
-<AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.hellofx.HelloController">
-   <children>
-      <Label layoutX="218.0" layoutY="54.0" text="This is the create Scene" />
-      <Button layoutX="14.0" layoutY="14.0" mnemonicParsing="false" onAction="#switchScene" text="Back" />
-   </children>
-</AnchorPane>
+            <!-- Left Panel - Tools -->
+            <VBox spacing="15" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
+                <Label text="Tools" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+                
+                <Separator/>
+                
+                <Label text="Select Tool:" style="-fx-font-weight: bold;"/>
+                
+                <RadioButton text="🚗 Set Robot Start" fx:id="startToolButton" selected="true">
+                    <font><Font size="14"/></font>
+                    <toggleGroup>
+                        <ToggleGroup fx:id="toolToggleGroup"/>
+                    </toggleGroup>
+                </RadioButton>
+                
+                <RadioButton text="🌐 Set Exit/Goal" toggleGroup="$toolToggleGroup" fx:id="exitToolButton">
+                    <font><Font size="14"/></font>
+                </RadioButton>
+                
+                <RadioButton text="⬛ Place Obstacle" toggleGroup="$toolToggleGroup" fx:id="obstacleToolButton">
+                    <font><Font size="14"/></font>
+                </RadioButton>
+                
+                <RadioButton text="⬜ Erase" toggleGroup="$toolToggleGroup" fx:id="eraseToolButton">
+                    <font><Font size="14"/></font>
+                </RadioButton>
+                
+                <Separator/>
+                
+                <Label text="Legend:" style="-fx-font-weight: bold; -fx-font-size: 12px;"/>
+                <HBox spacing="5" alignment="CENTER_LEFT">
+                    <Region style="-fx-background-color: #4CAF50; -fx-pref-width: 20; -fx-pref-height: 20; -fx-border-color: black;"/>
+                    <Label text="Robot Start" style="-fx-font-size: 11px;"/>
+                </HBox>
+                <HBox spacing="5" alignment="CENTER_LEFT">
+                    <Region style="-fx-background-color: #2196F3; -fx-pref-width: 20; -fx-pref-height: 20; -fx-border-color: black;"/>
+                    <Label text="Exit/Goal" style="-fx-font-size: 11px;"/>
+                </HBox>
+                <HBox spacing="5" alignment="CENTER_LEFT">
+                    <Region style="-fx-background-color: #424242; -fx-pref-width: 20; -fx-pref-height: 20; -fx-border-color: black;"/>
+                    <Label text="Obstacle" style="-fx-font-size: 11px;"/>
+                </HBox>
+                <HBox spacing="5" alignment="CENTER_LEFT">
+                    <Region style="-fx-background-color: white; -fx-pref-width: 20; -fx-pref-height: 20; -fx-border-color: black;"/>
+                    <Label text="Empty" style="-fx-font-size: 11px;"/>
+                </HBox>
+            </VBox>
+
+            <!-- Right Panel - Grid -->
+            <VBox spacing="10" alignment="CENTER" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
+                <Label text="10x10 Factory Layout Grid" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+                
+                <!-- Grid Container -->
+                <GridPane fx:id="gridPane" gridLinesVisible="true" 
+                          style="-fx-background-color: #e0e0e0; -fx-border-color: black; -fx-border-width: 2;"/>
+                
+                <Label fx:id="statusLabel" text="Click cells to design your layout" 
+                       style="-fx-font-size: 12px; -fx-text-fill: #666;"/>
+            </VBox>
+        </HBox>
+    </center>
+
+</BorderPane>
