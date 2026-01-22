@@ -135,11 +135,8 @@ public void refreshData() {
 
     // Back button method (lowercase 's' to match FXML)
     @FXML
-    public void switchScene(ActionEvent event) throws IOException {
+    public void handleBack(ActionEvent event) throws IOException {
         Parent root = FXMLLoader.load(getClass().getResource("dashboard.fxml"));
-        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-        Scene scene = new Scene(root);
-        stage.setScene(scene);
-        stage.show();
+        HelloApplication.switchScene(root);
     }
 }

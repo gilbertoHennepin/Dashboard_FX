@@ -2,70 +2,99 @@ package org.example.hellofx;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.image.Image;
-import javafx.scene.input.KeyCombination;
+import javafx.scene.control.Button;
+import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
 import java.io.IOException;
 
-
 public class HelloApplication extends Application {
-
-    public static void main(String[] args) {
-        launch(args);
-    }
-
+    
+    private static ChatbotPane chatbot;
+    private static BorderPane rootLayout;
+    private static StackPane contentArea;
+    
     @Override
     public void start(Stage stage) throws IOException {
-
-        // Load the FXML file
-        FXMLLoader fxmlLoader = new FXMLLoader(HelloApplication.class.getResource("/org/example/hellofx/dashboard.fxml"));
-        Scene scene = new Scene(fxmlLoader.load());
-
-        // Set window icon (make sure robot.jpg is in resources)
-        Image icon = new Image(HelloApplication.class.getResourceAsStream("robot.jpg"));
-        stage.getIcons().add(icon);
-
-        stage.setTitle("Stage Demo program");
+        // Create root layout
+        rootLayout = new BorderPane();
+        
+        // Create chatbot (hidden by default)
+        chatbot = new ChatbotPane();
+        
+        // Create content area for scenes
+        contentArea = new StackPane();
+        contentArea.setAlignment(Pos.TOP_LEFT);
+        
+        // Load initial scene (dashboard)
+        Parent initialScene = FXMLLoader.load(getClass().getResource("dashboard.fxml"));
+        contentArea.getChildren().add(initialScene);
+        
+        // Create chatbot toggle button (floating button)
+        Button chatbotToggle = new Button("💬");
+        chatbotToggle.setStyle(
+            "-fx-background-color: #5d6bff; " +
+            "-fx-text-fill: white; " +
+            "-fx-font-size: 24px; " +
+            "-fx-background-radius: 50; " +
+            "-fx-min-width: 60px; " +
+            "-fx-min-height: 60px; " +
+            "-fx-cursor: hand; " +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 3);"
+        );
+        chatbotToggle.setOnAction(e -> chatbot.toggle());
+        
+        // Position toggle button
+        StackPane.setAlignment(chatbotToggle, Pos.BOTTOM_RIGHT);
+        StackPane.setMargin(chatbotToggle, new Insets(0, 30, 30, 0));
+        
+        // Position chatbot
+        StackPane.setAlignment(chatbot, Pos.CENTER_RIGHT);
+        StackPane.setMargin(chatbot, new Insets(20, 20, 20, 0));
+        
+        // Combine content and chatbot in a StackPane
+        StackPane mainStack = new StackPane();
+        mainStack.getChildren().addAll(contentArea, chatbot, chatbotToggle);
+        
+        rootLayout.setCenter(mainStack);
+        
+        // Create scene
+        Scene scene = new Scene(rootLayout, 1200, 800);
+        stage.setTitle("Robot Simulator Dashboard");
         stage.setScene(scene);
-        stage.setResizable(true);
-        stage.setFullScreen(false);
-        //stage.setMaximized(true);
-        stage.setFullScreenExitHint("To ESCAPE PRESS q");
-        stage.setFullScreenExitKeyCombination(KeyCombination.keyCombination("q"));
-
         stage.show();
+    }
+    
+    // Static method to switch scenes while keeping chatbot
+    public static void switchScene(Parent newScene) {
+        if (contentArea == null) {
+            System.err.println("ERROR: contentArea is null! Cannot switch scene.");
+            return;
+        }
+        if (newScene == null) {
+            System.err.println("ERROR: newScene is null! Cannot switch scene.");
+            return;
+        }
+        try {
+            contentArea.getChildren().clear();
+            contentArea.getChildren().add(newScene);
+            System.out.println("Scene switched successfully");
+        } catch (Exception e) {
+            System.err.println("ERROR switching scene:");
+            e.printStackTrace();
+        }
+    }
+    
+    // Static method to get chatbot instance
+    public static ChatbotPane getChatbot() {
+        return chatbot;
+    }
 
-//        Image icon = new Image("robot.jpg"); // insert icon that's in resources
-//        stage.getIcons().add(icon);               // insert icon into stage
-//        stage.setTitle("Stage Demo program");
-//        stage.setWidth(800);                       // stage height & width
-//        stage.setHeight(500);
-//        stage.setResizable(true);                // disable resizing
-//        stage.setFullScreen(true);                // set full screen
-//        stage.setFullScreenExitHint("To ESCAPE PRESS q");
-//        stage.setFullScreenExitKeyCombination(KeyCombination.keyCombination("q"));
-//
-//        // add image into program and set coordinates
-//        Image image = new Image("robot.jpg");
-//        ImageView imageView = new ImageView(image);
-//        imageView.setX(400);
-//        imageView.setY(400);
-//        // Try to load the image programmatically
-//        Image testImage = new Image(getClass().getResourceAsStream("/trashcan.png"));
-//        System.out.println("Image width: " + testImage.getWidth()); // Should NOT be -1
-//
-//
-//        Group root = new Group();
-//        Scene scene = new Scene(root, Color.GRAY);
-//
-//        root.getChildren().add(imageView); // insert image into program
-//
-//
-//        stage.setScene(scene);
-//        stage.show();
-
-
+    public static void main(String[] args) {
+        launch();
     }
 }

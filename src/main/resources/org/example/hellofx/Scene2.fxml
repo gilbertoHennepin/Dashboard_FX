@@ -30,7 +30,7 @@
                     <Insets top="10" right="15" bottom="10" left="14"/>
                 </padding>
                 
-                <Button text="Back" onAction="#switchToSummary" 
+                <Button text="Back" onAction="#handleBack" 
                         style="-fx-background-color: #5d6bff; -fx-text-fill: white; -fx-font-weight: bold;"
                         prefHeight="34" prefWidth="91"/>
                 

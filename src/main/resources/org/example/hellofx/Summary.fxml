@@ -10,7 +10,8 @@
     <padding>
         <Insets bottom="20" left="20" right="20" top="20" />
     </padding>
-    <Button mnemonicParsing="false" onAction="#switchScene" text="Back" />
+    <Button mnemonicParsing="false" onAction="#handleBack" text="Back" 
+            style="-fx-background-color: #5d6bff; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 15 8 15; -fx-background-radius: 5;"/>
     <!-- Header -->
     <Label style="-fx-font-size: 28px; -fx-font-weight: bold;" text="Summary" />
     <!-- Summary Tiles Row -->

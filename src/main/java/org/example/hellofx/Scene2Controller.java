@@ -200,11 +200,8 @@ public class Scene2Controller {
     }
 
     @FXML
-    public void switchToSummary(ActionEvent event) throws IOException {
-        Parent root = FXMLLoader.load(getClass().getResource("Summary.fxml"));
-        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-        Scene scene = new Scene(root);
-        stage.setScene(scene);
-        stage.show();
+    public void handleBack(ActionEvent event) throws IOException {
+        Parent root = FXMLLoader.load(getClass().getResource("dashboard.fxml"));
+        HelloApplication.switchScene(root);
     }
 }

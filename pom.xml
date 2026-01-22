@@ -69,7 +69,7 @@
                     <execution>
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>org.example.hellofx/org.example.hellofx.HelloApplication</mainClass>
+                            <mainClass>org.example.hellofx.HelloApplication</mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>
                             <jlinkImageName>app</jlinkImageName>
