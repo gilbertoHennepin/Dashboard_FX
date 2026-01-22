@@ -1,13 +1,12 @@
 module org.example.hellofx {
-    requires javafx.base;
-    requires javafx.controls;
-    requires javafx.fxml;
-    requires java.desktop;
-    requires java.sql;
-
+    requires transitive javafx.base;
+    requires transitive javafx.controls;
+    requires transitive javafx.fxml;
+    requires transitive javafx.graphics;
+    requires transitive java.desktop;
+    requires transitive java.sql;
     opens org.example.hellofx to javafx.fxml;
     exports org.example.hellofx;
     exports org.example.hellofx.dataClasses;  
-    exports org.example.hellofx.dba;      
-    
+    exports org.example.hellofx.dba;
 }

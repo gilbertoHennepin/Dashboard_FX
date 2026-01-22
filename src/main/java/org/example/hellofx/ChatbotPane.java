@@ -4,15 +4,17 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.scene.text.Font;
+
 
 public class ChatbotPane extends VBox {
     
     private ListView<String> chatListView;
     private TextField messageInput;
     private Button sendButton;
+    private ChatBotService chatBotService;
     
     public ChatbotPane() {
+        chatBotService = new ChatBotService();
         initializeComponents();
         setupLayout();
         setupEventHandlers();
@@ -96,36 +98,41 @@ public class ChatbotPane extends VBox {
     }
     
     private void simulateBotResponse(String userMessage) {
-        // Simulate typing delay
-        new Thread(() -> {
-            try {
-                Thread.sleep(500);
-                javafx.application.Platform.runLater(() -> {
-                    String response = generateMockResponse(userMessage);
-                    chatListView.getItems().add("Bot: " + response);
-                    chatListView.scrollTo(chatListView.getItems().size() - 1);
-                });
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }).start();
-    }
-    
-    private String generateMockResponse(String message) {
-        // Mock responses - replace with actual AI later
-        String lower = message.toLowerCase();
+        // Send message to ChatBotService asynchronously
+        sendButton.setDisable(true);
+        messageInput.setDisable(true);
         
-        if (lower.contains("hello") || lower.contains("hi")) {
-            return "Hello! How can I assist you with the robot simulation?";
-        } else if (lower.contains("help")) {
-            return "I can help you with layouts, simulations, and rulesets. What would you like to know?";
-        } else if (lower.contains("layout")) {
-            return "You can create layouts in the Create section. Would you like tips on designing effective layouts?";
-        } else if (lower.contains("simulation")) {
-            return "To run a simulation, select a layout and ruleset, then click 'Run Simulation'. Need more details?";
-        } else {
-            return "That's an interesting question! I'm here to help with your robot simulation tasks.";
-        }
+        chatBotService.requestCommand("{}", userMessage)
+            .thenAccept(command -> {
+                javafx.application.Platform.runLater(() -> {
+                    String response = "Bot: " + command.explanation;
+                    if (!command.action.equals("noop")) {
+                        response += " [Action: " + command.action;
+                        if (command.direction != null) {
+                            response += ", Direction: " + command.direction;
+                        }
+                        if (command.distance > 0) {
+                            response += ", Distance: " + command.distance;
+                        }
+                        response += "]";
+                    }
+                    chatListView.getItems().add(response);
+                    chatListView.scrollTo(chatListView.getItems().size() - 1);
+                    sendButton.setDisable(false);
+                    messageInput.setDisable(false);
+                    messageInput.requestFocus();
+                });
+            })
+            .exceptionally(throwable -> {
+                javafx.application.Platform.runLater(() -> {
+                    chatListView.getItems().add("Bot: Sorry, I encountered an error. Please try again.");
+                    chatListView.scrollTo(chatListView.getItems().size() - 1);
+                    sendButton.setDisable(false);
+                    messageInput.setDisable(false);
+                    messageInput.requestFocus();
+                });
+                return null;
+            });
     }
     
     public void show() {
@@ -138,5 +145,11 @@ public class ChatbotPane extends VBox {
     
     public void toggle() {
         this.setVisible(!this.isVisible());
+    }
+    
+    public void shutdown() {
+        if (chatBotService != null) {
+            chatBotService.shutdown();
+        }
     }
 }
